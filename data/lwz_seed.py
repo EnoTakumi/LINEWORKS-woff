@@ -2,12 +2,12 @@
 """LWZ デモ用の架空データ生成。全データ架空(実在の氏名・企業・電話・メールは使わない)。
 
 使い方:
-  python3 data/lwz_seed.py accounts
+  python3 data/lwz_seed.py companies
   python3 data/lwz_seed.py candidates
   python3 data/lwz_seed.py jobs        <ids.json>
   python3 data/lwz_seed.py talklogs    <ids.json>
   python3 data/lwz_seed.py tasks       <ids.json>
-ids.json = {"accounts": {"A1": "<id>", ...}, "candidates": {"C01": "<id>", ...},
+ids.json = {"companies": {"A1": "<id>", ...}, "candidates": {"C01": "<id>", ...},
             "jobs": {"J01": "<id>", ...}, "talklogs": {"L01": "<id>", ...}}
 出力は Zoho CRM API(createRecords / createCustomModuleRecords)の body。
 時刻の基準は NOW(2026-11-16 10:00 JST)。デモ当日に合わせるときは NOW と日付を一括でずらす。
@@ -34,10 +34,12 @@ def line_id(key):
     return "U" + hashlib.md5(("lwzdemo-" + key).encode()).hexdigest()
 
 
-ACCOUNTS = {
-    "A1": "株式会社ミナトテック", "A2": "あおぞらメディカル株式会社", "A3": "株式会社サクラ物産",
-    "A4": "北斗ロジスティクス株式会社", "A5": "株式会社グリーンリーフ", "A6": "ナナミ製作所株式会社",
-    "A7": "株式会社ハルカゼ商事", "A8": "ルミナス・フーズ株式会社",
+# key: (企業名, 業種, 所在地)  ※ 標準 Accounts は使わず LWZ_Companies に投入する
+COMPANIES = {
+    "A1": ("株式会社ミナトテック", "IT・通信", "東京都"), "A2": ("あおぞらメディカル株式会社", "医療・介護", "福岡県"),
+    "A3": ("株式会社サクラ物産", "商社", "東京都"), "A4": ("北斗ロジスティクス株式会社", "物流", "愛知県"),
+    "A5": ("株式会社グリーンリーフ", "小売", "東京都"), "A6": ("ナナミ製作所株式会社", "製造", "愛知県"),
+    "A7": ("株式会社ハルカゼ商事", "商社", "東京都"), "A8": ("ルミナス・フーズ株式会社", "食品", "東京都"),
 }
 
 # key: (氏名, カナ, 年齢, ローマ字, 現職, 現年収, 希望地域, 希望職種, 希望年収下限, 時期, 紐付け状態, 選考, 確定, 備考)
@@ -126,9 +128,9 @@ TASKS = [
 ]
 
 
-def accounts_body():
-    return {"data": [{"Account_Name": n, "Description": "架空企業(LWZデモ用)"} for n in ACCOUNTS.values()],
-            "trigger": []}
+def companies_body():
+    return {"data": [{"Name": c[0], "LWZ_Industry": c[1], "LWZ_Location": c[2], "LWZ_Data_Category": CAT}
+                     for c in COMPANIES.values()], "trigger": []}
 
 
 def candidates_body():
@@ -158,7 +160,7 @@ def candidates_body():
 def jobs_body(ids):
     recs = []
     for k, j in JOBS.items():
-        recs.append({"Name": j[0], "LWZ_Account": {"id": ids["accounts"][j[1]]}, "LWZ_Job_Type": j[2],
+        recs.append({"Name": j[0], "LWZ_Company": {"id": ids["companies"][j[1]]}, "LWZ_Job_Type": j[2],
                      "LWZ_Area": j[3], "LWZ_Salary_Min": j[4], "LWZ_Salary_Max": j[5],
                      "LWZ_Employment_Type": j[6], "LWZ_Remote": j[7], "LWZ_Open_Status": j[8],
                      "LWZ_Open_Date": j[9], "LWZ_Requirements": j[10], "LWZ_Appeal": j[11],
@@ -214,7 +216,7 @@ def tasks_body(ids):
 if __name__ == "__main__":
     what = sys.argv[1]
     ids = json.load(open(sys.argv[2])) if len(sys.argv) > 2 else None
-    body = {"accounts": lambda: accounts_body(), "candidates": lambda: candidates_body(),
+    body = {"companies": lambda: companies_body(), "candidates": lambda: candidates_body(),
             "jobs": lambda: jobs_body(ids), "talklogs": lambda: talklogs_body(ids),
             "tasks": lambda: tasks_body(ids)}[what]()
     print(json.dumps(body, ensure_ascii=False, separators=(",", ":")))

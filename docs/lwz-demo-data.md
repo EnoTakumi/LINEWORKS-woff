@@ -5,9 +5,9 @@
 ## 投入結果
 | 対象 | 件数 | 識別 |
 |---|---|---|
-| Accounts(架空企業) | 8 | タグ `LWZ_DEMO`、説明欄「架空企業(LWZデモ用)」 |
+| 企業 `LWZ_Companies` | 8 | `LWZ_Data_Category=デモ用`(旧: 標準 Accounts のタグ LWZ_DEMO は廃止。残り8件は削除待ち) |
 | 求職者 `LWZ_Candidates` | 10 | `LWZ_Data_Category=デモ用` |
-| 求人 `LWZ_JobPostings` | 15 | 同上 |
+| 求人 `LWZ_JobPostings` | 15 | 同上(所属企業 = LWZ_Company) |
 | トーク履歴 `LWZ_TalkLogs` | 30 | 同上、`LWZ_Origin=模擬投入`、メッセージID `LWZDEMO-0001`〜`0030` |
 | 対応タスク `LWZ_Tasks` | 9 | 同上、件名の接頭辞【LW】 |
 
@@ -29,15 +29,15 @@
 
 1. 対象の確認(読み取り)
    - `select id from LWZ_Tasks where LWZ_Data_Category = 'デモ用'`(トーク履歴・求人・求職者も同様)
-   - Accounts は `LWZ_DEMO` タグが付いたものだけ。タグ無しの取引先は他デモのデータなので**絶対に対象にしない**。
-2. 削除の順序(参照される側を最後に): 対応タスク → トーク履歴 → 求人 → 求職者 → 架空 Accounts(タグ LWZ_DEMO)
-3. 再投入の順序: Accounts → 求職者 → 求人 → トーク履歴 → 対応タスク
+   - 標準 Accounts は対象外。他デモのデータなので**絶対に触らない**。
+2. 削除の順序(参照される側を最後に): 対応タスク → トーク履歴 → 求人 → 求職者 → 企業
+3. 再投入の順序: 企業 → 求職者 → 求人 → トーク履歴 → 対応タスク
    ```bash
-   python3 data/lwz_seed.py accounts
+   python3 data/lwz_seed.py companies
    python3 data/lwz_seed.py candidates
    python3 data/lwz_seed.py jobs <ids.json>
    python3 data/lwz_seed.py talklogs <ids.json>
    python3 data/lwz_seed.py tasks <ids.json>
    ```
-   `<ids.json>` は直前の投入結果から作る(`accounts`→`candidates`→`jobs`→`talklogs` の順に A1.. / C01.. / J01.. / L01.. のIDを記録)。
+   `<ids.json>` は直前の投入結果から作る(`companies`→`candidates`→`jobs`→`talklogs` の順に A1.. / C01.. / J01.. / L01.. のIDを記録)。
 4. 要確認: ごみ箱に残ったトーク履歴が、メッセージID(一意項目)と衝突するか。初回の削除→再投入で実機確認する。衝突する場合は、ごみ箱からの完全削除(人の承認)が必要。
